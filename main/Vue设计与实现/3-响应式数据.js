@@ -14,13 +14,17 @@ var obj = new Proxy(data, {
     }
 })
 
+var activeEffectStack = [];
 var activeEffect;
-
+// 应付迭代嵌套
 function effect (fn) {
     const effectFn = () => {
-        activeEffect = fn;
         clearEffect(fn)
+        activeEffect = effectFn
+        activeEffectStack.push(fn)
         fn()
+        activeEffectStack.pop(fn)
+        activeEffect = activeEffectStack[activeEffectStack.length - 1];
     }
     effectFn.deps = []
     return effectFn;
@@ -63,7 +67,9 @@ function trigger (target, key) {
     if (!depsMap) return
     const effects = depsMap.get(key)
     const effectToRun = new Set(effects)
-    effectToRun && effectToRun.forEach(effect => effect())
+    effectToRun && effectToRun.forEach(effectFn => 
+        effectFn !== activeEffect && effect()
+    )
 }
 
 const args = new Set([1])
