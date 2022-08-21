@@ -133,10 +133,16 @@ function watch (source, cb, options = {}) {
         getter = () => traverse(source)
     }
     let oldValue, newValue;
+    let cleanUp;
+
+    function onInvalidated(fn) {
+        cleanUp = fn
+    }
 
     function job () {
+        if (cleanUp) cleanUp();
         newValue = effectFn()
-        cb(oldValue, newValue)
+        cb(oldValue, newValue, onInvalidated)
         oldValue = newValue
     }
 
