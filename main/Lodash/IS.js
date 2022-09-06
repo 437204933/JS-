@@ -27,7 +27,6 @@ function isObjectLike(value) {
 
 function isPlainObjectOwn(value) {
     // 自我实现
-    console.log(value);
     return (
         value === null ||
         value.__proto__ === Object.prototype ||
@@ -90,7 +89,6 @@ function isBoolean(value) {
 const MAX_SAFE_INTEGER = 9007199254740991;
 
 function isLength(value) {
-    console.log(value);
     return (
         typeof value === 'number' &&
         value > -1 &&
@@ -125,4 +123,55 @@ const reIsNative = RegExp(
 
 function isNative(value) {
     return isObject(value) && reIsNative.test(value);
+}
+
+function isElement(value) {
+    return isObjectLike(value) && value.nodeType === 1 && !isPlainObject(value);
+}
+
+function isEmptyOwn(value) {
+    // 对于 Map 和 Set没有进行兼容
+    return (
+        !isObjectLike(value) ||
+        (Array.isArray(value) && !value.length) ||
+        !Object.keys(value).length // 只适用于prototype
+        // 对于有prototype的值会被原型链上的key值影响。for in遍及应该使用hasOwnProperty判断
+    );
+}
+
+function isPrototype(value) {
+    const Ctor = value && value.constructor;
+    const proto =
+        (typeof Ctor === 'function' && Ctor.constructor) || Object.prototype;
+    return value === proto;
+}
+
+function isEmpty(value) {
+    if (value == null) {
+        return true;
+    }
+    if (
+        isArrayLike(value) &&
+        (Array.isArray(value) ||
+            typeof value === 'string' ||
+            typeof value.splice === 'function' ||
+            isBuffer(value) ||
+            isTypedArray(value) ||
+            isArguments(value))
+    ) {
+        return !value.length;
+    }
+    const tag = getTag(value);
+    if (tag == '[object Map]' || tag == '[object Set]') {
+        return !value.size;
+    }
+    if (isPrototype(value)) {
+        return !Object.keys(value).length;
+    }
+    for (const key in value) {
+        if (Object.prototype.hasOwnProperty.call(value, key)) {
+            return false;
+        }
+    }
+    return true;
 }
